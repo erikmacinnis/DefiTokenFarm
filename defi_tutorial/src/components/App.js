@@ -9,53 +9,46 @@ import './App.css'
 
 class App extends Component { 
 
-  // async componentWillMount(){ // react lifecycle function
-  //   await this.loadWeb3()
-  //   await this.loadBlockChainData()
-  // }
-
   async componentDidMount(){ 
     await this.loadWeb3()
     await this.loadBlockChainData()
   }
 
-  async loadBlockChainData(){ //loads the blockchain to the website
+  // loads the blockchain data to the state variables in the constructor
+  async loadBlockChainData(){ 
     const web3 = window.web3
 
-    //connects the metamask account to the website
+    // Gets the ethereum account connected to the site
     const accounts = await web3.eth.requestAccounts()
     const account = accounts[0]
-    this.setState({ account }) //This is be account of the user of the app
-    //SetState is a function in React that allows you to change variables in the contructor (basically change the website)
+    this.setState({ account }) 
 
     // connects the networkId 
-    const networkId = await web3.eth.net.getId() //networkId is fetched 
+    const networkId = await web3.eth.net.getId() 
 
-    //Load DaiToken to the website
-    const daiTokenData = DaiToken.networks[networkId] // fetches the info under Network {networkId variable{<All this info>}} for the daiToken in the DaiToken.json file
+    // fetches daiTokens data
+    const daiTokenData = DaiToken.networks[networkId] 
 
-    if (daiTokenData){ //if there is a networkId
+    if (daiTokenData){ // if there is data available
 
       //DaiToken.abi is a binary file that holds all the information on DaiToken.abi 
-      const daiToken = new web3.eth.Contract(DaiToken.abi, daiTokenData.address) //function from web3.eth which uploads the contract to the website
-      this.setState({daiToken}) //sets the variable in the constructor
-      // methods allows the web3 object to use it's original methods 
-      let daiTokenBalance = await daiToken.methods.balanceOf(this.state.account).call() //we use call with a web3 object when we are fetching data
+      // creates contract object that enables use to use the daiToken easily
+      const daiToken = new web3.eth.Contract(DaiToken.abi, daiTokenData.address) 
+      this.setState({daiToken}) 
+      let daiTokenBalance = await daiToken.methods.balanceOf(this.state.account).call() 
       this.setState({daiTokenBalance: daiTokenBalance.toString()})
     }
     else {
       window.alert('DaiToken contract not deployed to detect network')
     }
 
-    const dappTokenData = DappToken.networks[networkId] // fetches the info under Network {networkId variable{<All this info>}} for the dappToken in the dappToken.json file
+    const dappTokenData = DappToken.networks[networkId] 
 
-    if (dappTokenData){ //if there is a networkId
+    if (dappTokenData){ 
 
-      //dappToken.abi is a binary file that holds all the information on dappToken.abi 
-      const dappToken = new web3.eth.Contract(DappToken.abi, dappTokenData.address) //function from web3.eth which uploads the contract to the website
-      this.setState({dappToken}) //sets the variable in the constructor
-      // methods allows the web3 object to use it's original methods 
-      let dappTokenBalance = await dappToken.methods.balanceOf(this.state.account).call() //we use call with a web3 object when we are fetching data
+      const dappToken = new web3.eth.Contract(DappToken.abi, dappTokenData.address) 
+      this.setState({dappToken}) 
+      let dappTokenBalance = await dappToken.methods.balanceOf(this.state.account).call() 
 
       this.setState({ dappTokenBalance: dappTokenBalance.toString() })
     }
@@ -63,15 +56,13 @@ class App extends Component {
       window.alert('dappToken contract not deployed to detect network')
     }
 
-    const tokenFarmData = TokenFarm.networks[networkId] // fetches the info under Network {networkId variable{<All this info>}} for the tokenFarm in the tokenFarm.json file
+    const tokenFarmData = TokenFarm.networks[networkId] 
 
-    if (tokenFarmData){ //if there is a networkId
-
-      //tokenFarm.abi is a binary file that holds all the information on tokenFarm.abi 
-      const tokenFarm = new web3.eth.Contract(TokenFarm.abi, tokenFarmData.address) //function from web3.eth which uploads the contract to the website
-      this.setState({tokenFarm}) //sets the variable in the constructor
-      // methods allows the web3 object to use it's original methods 
-      let stakingBalance = await tokenFarm.methods.stakingBalance(this.state.account).call() //we use call with a web3 object when we are fetching data
+    if (tokenFarmData){ 
+ 
+      const tokenFarm = new web3.eth.Contract(TokenFarm.abi, tokenFarmData.address) 
+      this.setState({tokenFarm}) 
+      let stakingBalance = await tokenFarm.methods.stakingBalance(this.state.account).call() 
       this.setState({ stakingBalance: stakingBalance.toString() })
     }
     else {
@@ -81,32 +72,34 @@ class App extends Component {
     this.setState({ loading : false })
   }
 
-  async loadWeb3(){ //this function connects app to the blockchain // used all the time
-    if (window.ethereum) { //if ethereum browser
+  //this function connects app to the blockchain
+  async loadWeb3(){ 
+
+    //checks if a ethereum app is connected
+    if (window.ethereum) { 
       window.web3 = new Web3(window.ethereum)
       await window.ethereum.enable()
     }
-    else if (window.web33){ // if web3 object exist then
+    else if (window.web33){ 
       window.web3 = new Web3(window.web3.currentProvider)
     }
-    else{ //if neither
+    else{ 
       window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!')
     }
   }
   
-
-
+  // enables the stake tokens functionality on the app
   stakeTokens = async (amount) => {
-    this.setState({ loading: true }) //set loading
-    await this.state.daiToken.methods.approve(this.state.tokenFarm._address, amount).send({ from: this.state.account })//.on('transactionHash', (hash) => { //approve sending
-    
-    await this.state.tokenFarm.methods.stakeTokens(amount).send({ from: this.state.account }).on('transactionHash', (hash) => { //this.state.account because the money is already in the tokenFarm contract
-    //  //stake the tokens
-      
+    this.setState({ loading: true }) 
+    // approves the user
+    await this.state.daiToken.methods.approve(this.state.tokenFarm._address, amount).send({ from: this.state.account })
+    // stakes the tokens when a trasaction hash is returned
+    await this.state.tokenFarm.methods.stakeTokens(amount).send({ from: this.state.account }).on('transactionHash', (hash) => { 
     this.setState({ loading: false}) // set loading false
   })
 }
 
+  // enables the unstake tokens functionality on the app
   unstakeTokens = (amount) => {
     this.setState({loading: true })
     this.state.tokenFarm.methods.unstakeTokens().send({ from: this.state.account }).on('transactionHash', (hash) => {
@@ -119,13 +112,14 @@ class App extends Component {
     super(props)
     this.state = {
       account: '0x0',
-      daiToken: {}, //This is an empty object
+      daiToken: {}, 
       dappToken: {},
       tokenFarm: {},
       daiTokenBalance: '0',
       dappTokenBalance: '0',
       stakingBalance: '0',
-      loading: true // we have this because while the apps loading we don't wanna show content on the page
+      // when false a loading screen will be displayed
+      loading: true 
     }
   }
 
